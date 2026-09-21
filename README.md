@@ -65,6 +65,76 @@ We looked at the synthetic data in data/service_data.json and the pattern is pre
 
 Overall, the dataset shows a normal working period, followed by a short abnormal period with higher latency, CPU/memory spikes, and timeout errors. That is exactly the kind of pattern an AIOps system is meant to detect and flag.
 
+## Task 3: Identify Anomalies
+
+We used the provided anomaly-detection mechanism from the project to process the operational data and review the detected results.
+
+### 1. Detection process and verification
+The detection pipeline reads all records from data/service_data.json, runs each record through AnomalyDetector.detect(), and keeps only the records that are flagged as anomalies. From the actual run using the project pipeline, the system processed 10 records and detected 2 anomalies.
+
+### 2. Anomalies detected
+The detected anomalies are:
+- 2026-09-20T10:05:00
+  - service: payment-service
+  - response_time_ms: 610
+  - cpu_percent: 75
+  - memory_percent: 70
+  - log_level: ERROR
+  - message: Payment service timeout
+  - reasons: High response time
+
+- 2026-09-20T10:06:00
+  - service: payment-service
+  - response_time_ms: 640
+  - cpu_percent: 94
+  - memory_percent: 91
+  - log_level: ERROR
+  - message: Database connection timeout
+  - reasons: High response time, High CPU utilization, High memory utilization
+
+These two records clearly stand out from the surrounding data and match the expected abnormal behaviour in the dataset.
+
+### 3. Relevant metric and log information
+The important signals are:
+- response_time_ms increases from the normal 120-150 ms range to 610-640 ms
+- cpu_percent rises from about 42-57% to 75-94%
+- memory_percent rises from about 51-57% to 70-91%
+- log_level changes from INFO to ERROR
+- message fields show Payment service timeout and Database connection timeout
+
+This combination gives enough evidence to understand why the records were flagged.
+
+### 4. Normal vs anomalous observations
+Normal observations:
+- 2026-09-20T10:00:00 to 2026-09-20T10:04:00
+- 2026-09-20T10:07:00 to 2026-09-20T10:09:00
+
+These records are healthy because they have low latency, moderate CPU and memory usage, and INFO-level success messages.
+
+Anomalous observations:
+- 2026-09-20T10:05:00
+- 2026-09-20T10:06:00
+
+These records are abnormal because they have very high response time, a sharp CPU spike, memory pressure, and timeout errors.
+
+### 5. Expected anomaly missed or false positive check
+From the project result, no normal event was incorrectly flagged. The detector did not flag the healthy records, which is good.
+
+However, one important issue is that the method did not include the log-based reason properly. In the dataset, the abnormal records have ERROR log levels, but the detection logic only checks for WARNING in the code. So the relevant log condition is present in the data, but the reason "Error log detected" is not added to the anomalous event output. This means an expected log-related warning signal was effectively missed by the provided detection logic.
+
+### 6. Readability of the result
+The detection output is relatively readable because each flagged anomaly includes:
+- timestamp
+- service name
+- anomaly type
+- reasons list
+- original source record
+
+This makes it easy to see why a record was flagged and what data caused the alert.
+
+### 7. Limitation / possible improvement
+One limitation of this detection approach is that it uses fixed thresholds and does not consider temporal trends or severity patterns in a more advanced way. For example, an ERROR log event should probably be treated as a relevant anomaly signal even if the metric values are not yet above the threshold. A possible improvement would be to include log severity checks for ERROR and WARN, and to combine metric thresholds with trend-based detection so the system can catch a wider range of real incidents more reliably.
+
 ---
 
 &copy; 2025 GitHub &bull; [Code of Conduct](https://www.contributor-covenant.org/version/2/1/code_of_conduct/code_of_conduct.md) &bull; [MIT License](https://gh.io/mit)
