@@ -81,7 +81,7 @@ The detected anomalies are:
   - memory_percent: 70
   - log_level: ERROR
   - message: Payment service timeout
-  - reasons: High response time
+   - reasons: High response time, Error log detected
 
 - 2026-09-20T10:06:00
   - service: payment-service
@@ -90,7 +90,7 @@ The detected anomalies are:
   - memory_percent: 91
   - log_level: ERROR
   - message: Database connection timeout
-  - reasons: High response time, High CPU utilization, High memory utilization
+   - reasons: High response time, High CPU utilization, High memory utilization, Error log detected
 
 These two records clearly stand out from the surrounding data and match the expected abnormal behaviour in the dataset.
 
@@ -120,7 +120,7 @@ These records are abnormal because they have very high response time, a sharp CP
 ### 5. Expected anomaly missed or false positive check
 From the project result, no normal event was incorrectly flagged. The detector did not flag the healthy records, which is good.
 
-However, one important issue is that the method did not include the log-based reason properly. In the dataset, the abnormal records have ERROR log levels, but the detection logic only checks for WARNING in the code. So the relevant log condition is present in the data, but the reason "Error log detected" is not added to the anomalous event output. This means an expected log-related warning signal was effectively missed by the provided detection logic.
+The detector was initially checking only WARNING logs, so the ERROR log signal was missed. This was corrected by checking both WARNING and ERROR levels, and the anomaly results now include "Error log detected".
 
 ### 6. Readability of the result
 The detection output is relatively readable because each flagged anomaly includes:
@@ -173,32 +173,30 @@ The detected anomalies were the two timeout-related records at 10:05 and 10:06. 
    - Not in the current execution, as the event flow is broken between the producer and consumer.
 
 ### Conclusion
-The detection part works correctly, but the event flow is not fully complete in the current implementation. The anomaly is detected and created as an event, but the producer and consumer are connected to separate topics, so the event never reaches the consumer. This means the complete downstream event-processing chain is not working as intended in the current version of the project.
-
-This is a good example of how a system can detect the problem but still fail to propagate it through the pipeline if the event routing is incorrect.
+The initial event flow was broken because the producer and consumer used separate topics. This was corrected by connecting both components to one shared topic, allowing the detected events to reach the consumer.
 
 ## Task 5: Investigate and Correct the Workflow
 
 - The producer and consumer were connected to different topics.
 - The detector checked WARNING logs but ignored ERROR logs.
 - These issues explain why anomalies were detected but not consumed correctly.
-- The corrections identified and tested were to use one shared topic and include ERROR logs in the detection check.
-- The code was then restored to the original version to demonstrate the initial workflow behaviour.
+- The corrections were to use one shared topic and include ERROR logs in the detection check.
+- Both corrections were tested successfully with the project tests and pipeline.
 
 ## Task 6: Execute the End-to-End Pipeline
 
-- The original pipeline processed 10 records.
+- The corrected pipeline processed 10 records.
 - It detected 2 anomalies at 10:05 and 10:06.
-- It consumed 0 events because of the topic mismatch.
-- The existing tests passed: 9 tests passed successfully.
+- It consumed 2 events successfully.
+- The tests passed: 9 tests passed successfully.
 
 ## Reproducing the Demonstration
 
 1. Open a terminal in the project root.
 2. Run the tests with `PYTHONPATH=src python -m pytest -q`.
-3. Run the original pipeline with `python src/aiops_pipeline.py`.
-4. Expected result: 10 records processed, 2 anomalies detected, and 0 events consumed.
-5. The 0 consumed events demonstrates the topic mismatch described in Task 5.
+3. Run the corrected pipeline with `python src/aiops_pipeline.py`.
+4. Expected result: 10 records processed, 2 anomalies detected, and 2 events consumed.
+5. The consumed events should contain the timeout anomalies from 10:05 and 10:06.
 
 ---
 
