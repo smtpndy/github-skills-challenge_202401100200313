@@ -177,6 +177,20 @@ The detection part works correctly, but the event flow is not fully complete in 
 
 This is a good example of how a system can detect the problem but still fail to propagate it through the pipeline if the event routing is incorrect.
 
+## Task 5: Investigate and Correct the Workflow
+
+- The producer and consumer were connected to different topics.
+- The detector checked WARNING logs but ignored ERROR logs.
+- These issues explain why anomalies were detected but not consumed correctly.
+- The required corrections are to use one shared topic and include ERROR logs in the detection check.
+
+## Task 6: Execute the End-to-End Pipeline
+
+- The original pipeline processed 10 records.
+- It detected 2 anomalies at 10:05 and 10:06.
+- It consumed 0 events because of the topic mismatch.
+- The existing tests passed: 9 tests passed successfully.
+
 ---
 
 &copy; 2025 GitHub &bull; [Code of Conduct](https://www.contributor-covenant.org/version/2/1/code_of_conduct/code_of_conduct.md) &bull; [MIT License](https://gh.io/mit)
