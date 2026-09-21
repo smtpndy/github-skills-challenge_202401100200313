@@ -182,7 +182,8 @@ This is a good example of how a system can detect the problem but still fail to 
 - The producer and consumer were connected to different topics.
 - The detector checked WARNING logs but ignored ERROR logs.
 - These issues explain why anomalies were detected but not consumed correctly.
-- The required corrections are to use one shared topic and include ERROR logs in the detection check.
+- The corrections identified and tested were to use one shared topic and include ERROR logs in the detection check.
+- The code was then restored to the original version to demonstrate the initial workflow behaviour.
 
 ## Task 6: Execute the End-to-End Pipeline
 
@@ -190,6 +191,14 @@ This is a good example of how a system can detect the problem but still fail to 
 - It detected 2 anomalies at 10:05 and 10:06.
 - It consumed 0 events because of the topic mismatch.
 - The existing tests passed: 9 tests passed successfully.
+
+## Reproducing the Demonstration
+
+1. Open a terminal in the project root.
+2. Run the tests with `PYTHONPATH=src python -m pytest -q`.
+3. Run the original pipeline with `python src/aiops_pipeline.py`.
+4. Expected result: 10 records processed, 2 anomalies detected, and 0 events consumed.
+5. The 0 consumed events demonstrates the topic mismatch described in Task 5.
 
 ---
 
