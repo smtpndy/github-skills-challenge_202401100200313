@@ -14,55 +14,56 @@ Good luck!
 ## Assessment Summary
 
 ### AIOps scenario
-This assessment simulates an AIOps workflow for a production service called payment-service, which processes customer payment requests. The service emits operational telemetry including response time, CPU utilization, memory utilization, and log severity. The goal is to detect when the service begins to behave abnormally and surface the problem as an event that can be investigated or acted on.
+This project is based on a simple AIOps use case for a service called payment-service. The service handles payment requests and generates system data such as response time, CPU usage, memory usage, and log messages. The idea is to monitor this data and detect abnormal behaviour before it turns into a bigger service problem.
 
 ### Operational problem being addressed
-The payment-service occasionally experiences timeout errors and sharp rises in resource consumption. During these periods, response time increases dramatically, system pressure climbs, and some requests fail. These signs often indicate a degrading service condition that could lead to customer-facing impact if not detected early.
+The main issue here is that the service sometimes slows down badly and starts using much more system resources than usual. In those moments, requests take too long, the system gets overloaded, and errors appear in the logs. This kind of situation can affect users and may lead to downtime if it is not noticed early.
 
 ### Purpose of AIOps in this assessment
-AIOps is used here to turn raw service telemetry into actionable insight. Instead of waiting for a full outage, the workflow analyzes patterns across metrics and logs to identify anomalies, emit structured event records, and highlight the likely operational issue for investigation.
+AIOps is useful here because it helps us turn raw monitoring data into something meaningful. Instead of manually checking every metric and log line, we can analyze the data pattern and identify times when the service is behaving unusually. This makes it easier to detect failures earlier and understand what might be going wrong.
 
 ### Major components and their purpose
-- AnomalyDetector: reviews each telemetry record and flags abnormal behavior such as high response time, elevated CPU, high memory use, or error-related log signals.
-- EventTopic: acts as an in-memory event stream, representing the message bus that carries events between producers and consumers.
-- EventProducer: publishes detected anomaly events to the event topic so they can be passed downstream.
-- EventConsumer: reads the anomaly events from the topic and makes them available for the rest of the workflow.
+- AnomalyDetector: checks each record and identifies abnormal values such as high response time, high CPU usage, high memory usage, or error-level logs.
+- EventTopic: acts like an in-memory message queue, where events are stored before being consumed by another component.
+- EventProducer: sends detected anomaly events into the event topic.
+- EventConsumer: reads the events from the topic so they can be processed or examined later.
 
-These components represent a simple AIOps pipeline in which telemetry is analyzed, anomalies are published, and downstream systems can consume and act on the findings before they become larger incidents.
+These components together create a very basic AIOps pipeline: collected telemetry is analyzed, suspicious events are published, and the results are made available for further action.
 
 ## Operational Data Analysis
 
-Based on the synthetic operational records in data/service_data.json, the following observations are evident:
+We looked at the synthetic data in data/service_data.json and the pattern is pretty clear.
 
-1. Metrics fields
-   - response_time_ms: measures request latency, with values around 120-150 ms during normal operations and severe spikes at 610 and 640 ms during abnormal periods.
-   - cpu_percent: measures central processing usage, typically around 42-57% during normal operation and rising to 75-94% during anomalous periods.
-   - memory_percent: measures memory utilization, usually around 51-57% during normal activity and increasing to 70-91% during abnormal activity.
+1. Fields that represent metrics
+   - response_time_ms: this is the service response time in milliseconds. It is a performance metric.
+   - cpu_percent: this shows CPU usage percentage. It is a system resource metric.
+   - memory_percent: this shows memory usage percentage. It is also a resource metric.
 
-2. Log information fields
-   - log_level: indicates severity, such as INFO for normal operational events and ERROR for degraded or failing conditions.
-   - message: provides the human-readable event description, such as Payment request processed successfully versus timeout-related error messages.
+2. Fields that represent log information
+   - log_level: this tells us the severity of the event, such as INFO or ERROR.
+   - message: this gives the actual log text, like Payment request processed successfully or Payment service timeout.
 
 3. How timestamps are used
-   - The timestamp field is an ISO-8601 datetime recorded for each service event.
-   - The dataset uses one-minute intervals from 2026-09-20T10:00:00 through 2026-09-20T10:09:00.
-   - The timestamps show a sequence from normal behavior, through a short period of degradation, and then back to normal service behavior.
+   - The timestamp field records when each event happened.
+   - The records are spaced at one-minute intervals, starting from 2026-09-20T10:00:00 and continuing up to 2026-09-20T10:09:00.
+   - By looking at the timestamps in order, we can clearly see how the service behaves over time, from normal conditions to a short period of abnormal activity and then back to normal again.
 
-4. Normal behaviour
-   - Observations at 10:00 through 10:04, 10:07 through 10:09 show stable request processing with response times roughly 120-150 ms.
-   - CPU usage remains largely in the mid-40s to low-50s percent, and memory stays around 51-57%.
-   - log_level is INFO and the message states Payment request processed successfully.
-   - This pattern indicates healthy operation with no significant service instability.
+4. Observations that look normal
+   - From 10:00 to 10:04, the service seems to be working normally.
+   - response_time_ms stays around 120-150 ms, which is a normal range for this dataset.
+   - cpu_percent stays around 42-57%, and memory_percent stays around 51-57%.
+   - log_level is INFO and the message says Payment request processed successfully.
+   - This pattern shows steady and healthy service behaviour.
 
-5. Unusual behaviour
-   - The records at 10:05 and 10:06 are clearly abnormal.
-   - response_time_ms jumps to 610 ms and then 640 ms, far above the normal range.
-   - cpu_percent climbs to 75% and then 94%, showing heavy system load.
-   - memory_percent rises to 70% and then 91%, indicating memory pressure.
-   - log_level changes to ERROR and the messages identify Payment service timeout and Database connection timeout.
-   - These observations represent operational degradation and likely service instability or resource exhaustion.
+5. Observations that look unusual
+   - The records at 10:05 and 10:06 stand out clearly.
+   - response_time_ms rises to 610 ms and then 640 ms, which is much higher than the usual values.
+   - cpu_percent jumps to 75% and then 94%, which indicates heavy load.
+   - memory_percent rises to 70% and then 91%, which suggests memory pressure.
+   - log_level changes to ERROR, and the messages say Payment service timeout and Database connection timeout.
+   - These values are clearly abnormal compared to the rest of the dataset and indicate a service issue or resource bottleneck.
 
-This dataset demonstrates a classic AIOps pattern: a short period of abnormal operational signal emerges from telemetry and log data, and that pattern stands out clearly against the surrounding normal service behavior.
+Overall, the dataset shows a normal working period, followed by a short abnormal period with higher latency, CPU/memory spikes, and timeout errors. That is exactly the kind of pattern an AIOps system is meant to detect and flag.
 
 ---
 
