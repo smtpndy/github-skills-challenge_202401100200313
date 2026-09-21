@@ -135,6 +135,48 @@ This makes it easy to see why a record was flagged and what data caused the aler
 ### 7. Limitation / possible improvement
 One limitation of this detection approach is that it uses fixed thresholds and does not consider temporal trends or severity patterns in a more advanced way. For example, an ERROR log event should probably be treated as a relevant anomaly signal even if the metric values are not yet above the threshold. A possible improvement would be to include log severity checks for ERROR and WARN, and to combine metric thresholds with trend-based detection so the system can catch a wider range of real incidents more reliably.
 
+## Task 4: Verify the AIOps Event Flow
+
+For this task, we used the existing event-stream simulation in the project to check whether an anomaly can move through the complete workflow.
+
+### Role of the components
+- Producer: takes the detected anomaly and sends it into the event system.
+- Topic: acts as the in-memory channel where messages are stored and later read by the consumer.
+- Consumer: reads events from the topic and receives the message.
+- Event/message: the actual anomaly record that carries information such as timestamp, service name, type, and reasons.
+
+### Execution result
+I ran the provided workflow using the project’s own pipeline and the result was:
+- records_processed = 10
+- anomalies_detected = 2
+- events_consumed = 0
+
+The detected anomalies were the two timeout-related records at 10:05 and 10:06. These were correctly identified by the detector and were available as anomaly events in the pipeline.
+
+### Verification of the flow
+1. An anomaly identified by the detection process results in an event.
+   - Yes, the detector produced 2 anomaly events.
+
+2. The event is passed to the producer.
+   - Yes, the event is passed to EventProducer.publish() when the detector finds a match.
+
+3. The producer publishes the event to the appropriate topic.
+   - In the code, the producer is connected to a topic named service-events, but the consumer is connected to a different topic named anomaly-events.
+
+4. The consumer receives the event from the topic.
+   - No, the consumer did not receive any event in the actual execution because it was subscribed to a different topic.
+
+5. The consumer processes the received event.
+   - This step is not reached in the current flow because no event is present in the consumer topic.
+
+6. The processed event reaches the downstream AIOps component.
+   - Not in the current execution, as the event flow is broken between the producer and consumer.
+
+### Conclusion
+The detection part works correctly, but the event flow is not fully complete in the current implementation. The anomaly is detected and created as an event, but the producer and consumer are connected to separate topics, so the event never reaches the consumer. This means the complete downstream event-processing chain is not working as intended in the current version of the project.
+
+This is a good example of how a system can detect the problem but still fail to propagate it through the pipeline if the event routing is incorrect.
+
 ---
 
 &copy; 2025 GitHub &bull; [Code of Conduct](https://www.contributor-covenant.org/version/2/1/code_of_conduct/code_of_conduct.md) &bull; [MIT License](https://gh.io/mit)
